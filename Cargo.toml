@@ -1,0 +1,20 @@
+[package]
+name = "users"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+uniffi = { version = "0.25.3", features = ["cli"] }
+uuid = { version = "1.6.1", features = ["v4"] }
+
+[build-dependencies]
+uniffi = { version = "0.25.3", features = ["build"] }
+
+[dev-dependencies]
+uniffi = { version = "0.25.3", features = ["bindgen-tests"] }
+
+[lib]
+crate-type = ["staticlib", "cdylib", "lib"]
