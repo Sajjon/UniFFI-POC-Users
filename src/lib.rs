@@ -4,7 +4,7 @@ mod u0 {
     use std::{
         cell::RefCell,
         ops::Deref,
-        sync::{Arc, RwLock, RwLockReadGuard},
+        sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
     };
 
     use uuid::Uuid;
@@ -26,6 +26,9 @@ mod u0 {
                 id: Uuid::new_v4().to_string(),
                 name: name.to_string(),
             }
+        }
+        pub fn get_name(&self) -> String {
+            self.name.clone()
         }
     }
 
@@ -49,6 +52,10 @@ mod u0 {
         pub fn add_user(&mut self, named: &str) {
             self.users.push(User::new(named))
         }
+
+        pub fn change_name(&mut self, user_index: usize, to: String) {
+            self.users[0].name = to
+        }
     }
 
     #[uniffi::export]
@@ -69,6 +76,13 @@ mod u0 {
             access(self.users.try_read().unwrap())
         }
 
+        fn write<F>(&self, mutate: F)
+        where
+            F: Fn(RwLockWriteGuard<'_, Users>),
+        {
+            mutate(self.users.try_write().unwrap())
+        }
+
         fn len(&self) -> usize {
             self.read(|u| u.len())
         }
@@ -84,11 +98,18 @@ mod u0 {
         }
 
         pub fn add_user(&self, named: String) {
-            self.users.try_write().unwrap().add_user(named.as_str())
+            self.write(|mut u| u.add_user(named.as_str()))
+        }
+
+        pub fn change_name_of_user(&self, at: u32, to: String) {
+            self.write(|mut u| u.change_name(at as usize, to.to_owned()))
         }
 
         pub fn user_count(&self) -> u32 {
             self.len() as u32
+        }
+        pub fn get_users(&self) -> Vec<User> {
+            self.read(|u| u.users.clone())
         }
     }
 }
@@ -104,6 +125,8 @@ mod test_u0 {
         let holder = Holder::new(Environment::Prod);
         assert_eq!(holder.user_count(), 0);
         holder.add_user("Foo".to_string());
-        assert_eq!(holder.user_count(), 1);
+        assert_eq!(holder.get_users()[0].get_name(), "Foo");
+        holder.change_name_of_user(0, "Bar".to_string());
+        assert_eq!(holder.get_users()[0].get_name(), "Bar");
     }
 }
