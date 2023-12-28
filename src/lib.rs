@@ -56,11 +56,6 @@ impl Users {
     }
 }
 
-#[uniffi::export]
-pub fn new_users(environment: Environment) -> Users {
-    Users::new(environment)
-}
-
 #[derive(Debug, uniffi::Object)]
 pub struct Holder {
     users: RwLock<Users>,

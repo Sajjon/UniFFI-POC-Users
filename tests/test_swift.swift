@@ -1,8 +1,8 @@
 import users
 
-func test() throws {
-  print("🔮 Swift program start.")
-  defer { print("✅ Swift program end.") }
+func testHolder() throws {
+  print("🔮 \(#function) start.")
+  defer { print("✅ \(#function) end.") }
 
   let holder = Holder(environment: .prod)
   assert(holder.userCount() == 0)
@@ -13,6 +13,23 @@ func test() throws {
   holder.addUser(named: "Biz")
   holder.changeNameOfUser(at: 1, to: "Buz")
   assert(holder.getUsers().map(\.name) == ["Bar", "Buz"])
+}
+
+func testUsers() throws {
+  print("🔮 \(#function) start.")
+  defer { print("✅ \(#function) end.") }
+  var users = Users(environment: .prod, users: [])
+  assert(users.users.count == 0)
+  users.users.append(User(id: "0", name: "Foo"))
+  assert(users.users.count == 1)
+}
+
+func test() throws {
+  print("🔮 Swift program start.")
+  defer { print("✅ Swift program end.") }
+
+  try testUsers()
+  try testHolder()
 }
 
 try! test()
