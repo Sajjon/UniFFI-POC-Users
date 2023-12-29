@@ -1,8 +1,24 @@
-uniffi::setup_scaffolding!();
+use std::str::FromStr;
 #[allow(unused)]
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use uuid::Uuid;
+
+impl UniffiCustomTypeConverter for Uuid {
+    type Builtin = String;
+    fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
+        Uuid::from_str(val.as_str()).map_err(|e| e.into())
+    }
+    fn from_custom(obj: Self) -> Self::Builtin {
+        obj.to_string()
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct User {
+    id: Uuid,
+    name: String,
+    flags: AccountFlags,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
 pub struct AccountFlags {
@@ -29,16 +45,10 @@ pub enum AccountFlag {
     DeletedByUser,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
-pub struct User {
-    id: String,
-    name: String,
-    flags: AccountFlags,
-}
 impl User {
     pub fn new(name: &str) -> Self {
         Self {
-            id: Uuid::new_v4().to_string(),
+            id: Uuid::new_v4(),
             name: name.to_string(),
             flags: AccountFlags::new(),
         }
@@ -171,3 +181,5 @@ mod tests {
         );
     }
 }
+
+uniffi::include_scaffolding!("users");
