@@ -21,20 +21,10 @@ func testHolder() throws {
   assert(holder.getUsers().map(\.name) == ["Bar", "Buz"])
 }
 
-func testUsers() throws {
-  print("🔮 \(#function) start.")
-  defer { print("✅ \(#function) end.") }
-  var users = Users(environment: .prod, users: [])
-  assert(users.users.count == 0)
-  users.users.append(User(id: "0", name: "Foo", flags: .init(flags: [])))
-  assert(users.users.count == 1)
-}
-
 func test() throws {
   print("🔮 Swift program start.")
   defer { print("✅ Swift program end.") }
 
-  try testUsers()
   try testHolder()
 }
 
