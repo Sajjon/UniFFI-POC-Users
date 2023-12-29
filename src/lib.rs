@@ -1,11 +1,24 @@
+uniffi::setup_scaffolding!();
 #[allow(unused)]
-use std::{
-    cell::RefCell,
-    ops::Deref,
-    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
-};
+mod lock;
+
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use uuid::Uuid;
+
+#[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
+pub struct AccountFlags {
+    flags: Vec<AccountFlag>,
+}
+
+impl AccountFlags {
+    pub fn new() -> Self {
+        Self { flags: Vec::new() }
+    }
+    pub fn add(&mut self, flag: AccountFlag) {
+        self.flags.push(flag)
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Enum)]
 pub enum Environment {
@@ -13,20 +26,33 @@ pub enum Environment {
     Test,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Enum)]
+pub enum AccountFlag {
+    DeletedByUser,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
 pub struct User {
     id: String,
     name: String,
+    flags: AccountFlags,
 }
 impl User {
     pub fn new(name: &str) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             name: name.to_string(),
+            flags: AccountFlags::new(),
         }
     }
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+    pub fn get_flags(&self) -> Vec<AccountFlag> {
+        self.flags.flags.clone()
+    }
+    pub fn add_flag_deleted_by_user(&mut self) {
+        self.flags.add(AccountFlag::DeletedByUser);
     }
 }
 
@@ -53,6 +79,10 @@ impl Users {
 
     pub fn change_name(&mut self, user_index: usize, to: String) {
         self.users[user_index].name = to
+    }
+
+    pub fn add_flag_deleted_by_user(&mut self, user_index: usize) {
+        self.users[user_index].add_flag_deleted_by_user()
     }
 }
 
@@ -98,6 +128,10 @@ impl Holder {
         self.write(|mut u| u.change_name(at as usize, to.to_owned()))
     }
 
+    pub fn add_flag_deleted_by_user(&self, at: u32) {
+        self.write(|mut u| u.add_flag_deleted_by_user(at as usize))
+    }
+
     pub fn user_count(&self) -> u32 {
         self.len() as u32
     }
@@ -106,20 +140,27 @@ impl Holder {
     }
 }
 
-uniffi::include_scaffolding!("users");
-
 #[cfg(test)]
 mod tests {
-    use crate::{Environment, Holder};
+    use crate::{AccountFlag, Environment, Holder};
 
     #[test]
     fn test() {
         let holder = Holder::new(Environment::Prod);
         assert_eq!(holder.user_count(), 0);
         holder.add_user("Foo".to_string());
+
         assert_eq!(holder.get_users()[0].get_name(), "Foo");
         holder.change_name_of_user(0, "Bar".to_string());
         assert_eq!(holder.get_users()[0].get_name(), "Bar");
+
+        assert_eq!(holder.get_users()[0].get_flags(), []);
+        holder.add_flag_deleted_by_user(0);
+        assert_eq!(
+            holder.get_users()[0].get_flags(),
+            [AccountFlag::DeletedByUser]
+        );
+
         holder.add_user("Biz".to_string());
         holder.change_name_of_user(1, "Buz".to_string());
         assert_eq!(
