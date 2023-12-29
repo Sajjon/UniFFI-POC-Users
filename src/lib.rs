@@ -1,7 +1,5 @@
 uniffi::setup_scaffolding!();
 #[allow(unused)]
-mod lock;
-
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use uuid::Uuid;
